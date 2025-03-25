@@ -1,3 +1,29 @@
+# Patches
+
+- fix completion path display
+ 
+# My Setup
+
+```bash
+
+/opt/homebrew/bin/python3.12 -m venv venv
+venv/bin/python3 -m pip install -e .
+```
+
+Is this also required?
+
+```bash
+brew install openblas
+```
+
+Then execute via:
+
+```bash
+venv/bin/python3 -m aider
+```
+
+# Old README
+
 <p align="center">
     <a href="https://aider.chat/"><img src="https://aider.chat/assets/logo.svg" alt="Aider Logo" width="300"></a>
 </p>
