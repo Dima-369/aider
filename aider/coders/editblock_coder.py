@@ -2,17 +2,22 @@ import difflib
 import math
 import re
 import sys
-from difflib import SequenceMatcher
+from difflib import SequenceMatcher, get_close_matches
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from aider import utils
+from aider.run_cmd import run_cmd
 
 from ..dump import dump  # noqa: F401
 from .base_coder import Coder
 from .editblock_prompts import EditBlockPrompts
+from .process_coder import ProcessCoder
+from ..process_commands import parse_command_xml, CommandRequest
+from .. import prompts
 
 
-class EditBlockCoder(Coder):
+class EditBlockCoder(ProcessCoder):
     """A coder that uses search/replace blocks for code modifications."""
 
     edit_format = "diff"
@@ -30,10 +35,49 @@ class EditBlockCoder(Coder):
             )
         )
 
-        self.shell_commands += [edit[1] for edit in edits if edit[0] is None]
-        edits = [edit for edit in edits if edit[0] is not None]
+        # Process commands and store shell commands
+        processed_edits = []
+        for edit in edits:
+            if edit[0] is None and edit[1].strip().startswith("<execute_command>"):
+                try:
+                    # Parse the command request first
+                    command_request = parse_command_xml(edit[1])
+                    
+                    if self.verbose:
+                        self.io.tool_output(f"Running command: {command_request.command}")
+                    
+                    # Execute command and get output
+                    exit_status, output = run_cmd(
+                        command_request.command, 
+                        verbose=self.verbose, 
+                        error_print=self.io.tool_error, 
+                        cwd=self.root
+                    )
 
-        return edits
+                    if output:
+                        num_lines = len(output.strip().splitlines())
+                        line_plural = "line" if num_lines == 1 else "lines"
+                        self.io.tool_output(f"Added {num_lines} {line_plural} of output to the chat.")
+
+                        msg = prompts.run_output.format(
+                            command=command_request.command,
+                            output=output,
+                        )
+
+                        # Only add the user message, don't add "Ok" response
+                        self.cur_messages += [
+                            dict(role="user", content=msg),
+                        ]
+                        
+                        # Set reflected message to continue the conversation
+                        self.reflected_message = msg
+                            
+                except Exception as e:
+                    self.io.tool_error(f"Error processing command: {e}")
+            else:
+                processed_edits.append(edit)
+
+        return processed_edits
 
     def apply_edits_dry_run(self, edits):
         return self.apply_edits(edits, dry_run=True)
@@ -439,7 +483,19 @@ def find_original_update_blocks(content, fence=DEFAULT_FENCE, valid_fnames=None)
     while i < len(lines):
         line = lines[i]
 
-        # Check for shell code blocks
+        # Check for XML command blocks
+        if line.strip().startswith("<execute_command>"):
+            command_lines = []
+            while i < len(lines) and not lines[i].strip().endswith("</execute_command>"):
+                command_lines.append(lines[i])
+                i += 1
+            if i < len(lines):
+                command_lines.append(lines[i])  # Include closing tag
+                i += 1
+                yield None, "".join(command_lines)
+            continue
+
+        # Check for shell code blocks (existing code...)
         shell_starts = [
             "```bash",
             "```sh",

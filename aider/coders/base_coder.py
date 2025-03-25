@@ -17,7 +17,7 @@ from collections import defaultdict
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from aider import __version__, models, prompts, urls, utils
 from aider.analytics import Analytics
@@ -38,6 +38,7 @@ from aider.repo import ANY_GIT_ERROR, GitRepo
 from aider.repomap import RepoMap
 from aider.run_cmd import run_cmd
 from aider.utils import format_content, format_messages, format_tokens, is_image_file
+from ..process_commands import parse_command_xml
 
 from ..dump import dump  # noqa: F401
 from .chat_chunks import ChatChunks
@@ -1086,7 +1087,7 @@ class Coder:
 
         platform_text = self.get_platform_info()
 
-        if self.suggest_shell_commands:
+        if self.suggest_shell_commands or True:
             shell_cmd_prompt = self.gpt_prompts.shell_cmd_prompt.format(platform=platform_text)
             shell_cmd_reminder = self.gpt_prompts.shell_cmd_reminder.format(platform=platform_text)
         else:
@@ -2290,7 +2291,24 @@ class Coder:
         self.repo.commit(fnames=self.need_commit_before_edits)
 
         # files changed, move cur messages back behind the files messages
-        # self.move_back_cur_messages(self.gpt_prompts.files_content_local_edits)
+
+    def process_command(self, command_xml: str) -> Optional[str]:
+        """
+        Process a command request from the LLM
+        Returns the command output if successful, None otherwise
+        """
+        try:
+            command_request = parse_command_xml(command_xml)
+            return self.handle_command_xml(command_request)
+        except Exception as e:
+            self.io.tool_error(f"Failed to process command: {e}")
+            return None
+
+    def handle_command_xml(self, command_xml: str) -> Optional[str]:
+        """
+        To be implemented by subclasses that handle command execution
+        """
+        raise NotImplementedError("Command execution not implemented for this coder")
         return True
 
     def get_edits(self, mode="update"):
@@ -2354,3 +2372,4 @@ class Coder:
             line_plural = "line" if num_lines == 1 else "lines"
             self.io.tool_output(f"Added {num_lines} {line_plural} of output to the chat.")
             return accumulated_output
+

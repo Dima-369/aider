@@ -49,7 +49,30 @@ If you need to edit any of these files, ask me to *add them to the chat* first.
 Do not edit these files!
 """
 
-    shell_cmd_prompt = ""
-    shell_cmd_reminder = ""
-    no_shell_cmd_prompt = ""
-    no_shell_cmd_reminder = ""
+    shell_cmd_prompt = """When you need to execute system commands, use the following XML format:
+
+<execute_command>
+<command>your_command_here</command>
+<requires_approval>true_or_false</requires_approval>
+<description>Optional description of what the command does</description>
+</execute_command>
+
+Guidelines for setting requires_approval:
+- Set to 'true' for:
+  * File modifications (create/delete/modify)
+  * Package installations
+  * System configuration changes
+  * Network operations
+  * Any potentially destructive operations
+- Set to 'false' for:
+  * Reading files/directories
+  * Running development servers
+  * Building projects
+  * Other safe, read-only operations
+"""
+
+    shell_cmd_reminder = "Remember to use the execute_command XML format for system commands and set requires_approval appropriately."
+
+    no_shell_cmd_prompt = "You are not allowed to execute system commands on {platform}."
+    
+    no_shell_cmd_reminder = "Remember: you cannot execute system commands on {platform}."

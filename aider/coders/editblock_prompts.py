@@ -31,24 +31,36 @@ ONLY EVER RETURN CODE IN A *SEARCH/REPLACE BLOCK*!
 """
 
     shell_cmd_prompt = """
-4. *Concisely* suggest any shell commands the user might want to run in ```bash blocks.
+4. When you need to execute system commands, use the following XML format:
 
-Just suggest shell commands this way, not example code.
-Only suggest complete shell commands that are ready to execute, without placeholders.
-Only suggest at most a few shell commands at a time, not more than 1-3, one per line.
-Do not suggest multi-line shell commands.
-All shell commands will run from the root directory of the user's project.
+<execute_command>
+<command>your_command_here</command>
+<requires_approval>true_or_false</requires_approval>
+<description>Optional description of what the command does</description>
+</execute_command>
+
+Guidelines for setting requires_approval:
+- Set to 'true' for:
+  * File modifications (create/delete/modify)
+  * Package installations
+  * System configuration changes
+  * Network operations
+  * Any potentially destructive operations
+- Set to 'false' for:
+  * Reading files/directories
+  * Running development servers
+  * Building projects
+  * Other safe, read-only operations
 
 Use the appropriate shell based on the user's system info:
 {platform}
-Examples of when to suggest shell commands:
 
-- If you changed a self-contained html file, suggest an OS-appropriate command to open a browser to view it to see the updated content.
-- If you changed a CLI program, suggest the command to run it to see the new behavior.
-- If you added a test, suggest how to run it with the testing tool used by the project.
-- Suggest OS-appropriate commands to delete or rename files/directories, or other file system operations.
-- If your code changes add new dependencies, suggest the command to install them.
-- Etc.
+Examples of when to suggest commands:
+- If you changed a self-contained html file, suggest an OS-appropriate command to open a browser to view it
+- If you changed a CLI program, suggest the command to run it to see the new behavior
+- If you added a test, suggest how to run it with the testing tool used by the project
+- Suggest OS-appropriate commands to delete or rename files/directories
+- If your code changes add new dependencies, suggest the command to install them
 """
 
     no_shell_cmd_prompt = """
@@ -191,13 +203,12 @@ ONLY EVER RETURN CODE IN A *SEARCH/REPLACE BLOCK*!
 {shell_cmd_reminder}
 """
 
-    shell_cmd_reminder = """
-Examples of when to suggest shell commands:
+    shell_cmd_reminder = """Remember to use the execute_command XML format for system commands and set requires_approval appropriately.
 
-- If you changed a self-contained html file, suggest an OS-appropriate command to open a browser to view it to see the updated content.
-- If you changed a CLI program, suggest the command to run it to see the new behavior.
-- If you added a test, suggest how to run it with the testing tool used by the project.
-- Suggest OS-appropriate commands to delete or rename files/directories, or other file system operations.
-- If your code changes add new dependencies, suggest the command to install them.
-- Etc.
+Examples of when to use commands:
+- If you changed a self-contained html file, suggest an OS-appropriate command to open a browser to view it
+- If you changed a CLI program, suggest the command to run it to see the new behavior
+- If you added a test, suggest how to run it with the testing tool used by the project
+- Suggest OS-appropriate commands to delete or rename files/directories
+- If your code changes add new dependencies, suggest the command to install them
 """
