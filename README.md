@@ -1,7 +1,3 @@
-# Patches
-
-- fix completion path display
- 
 # My Setup
 
 ```bash
@@ -20,6 +16,43 @@ Then execute via:
 
 ```bash
 venv/bin/python3 -m aider
+```
+
+Then patch `menus.py` from `venv/lib/python3.12/site-packages/prompt_toolkit/layout/menus.py`.
+
+Paste in this function:
+
+```python
+def _trim_formatted_text(
+    formatted_text: StyleAndTextTuples, max_width: int
+) -> tuple[StyleAndTextTuples, int]:
+    """
+    Trim the text to `max_width`, prepend dots when the text is too long.
+    Returns (text, width) tuple.
+    """
+    width = fragment_list_width(formatted_text)
+
+    # When the text is too wide, trim it.
+    if width > max_width:
+        result = []  # Text fragments.
+        remaining_width = max_width - 3  # Reserve space for "..."
+        fragments = list(explode_text_fragments(formatted_text))
+        
+        # Start from the end and work backwards
+        for style_and_ch in reversed(fragments):
+            ch_width = get_cwidth(style_and_ch[1])
+            
+            if ch_width <= remaining_width:
+                result.insert(0, style_and_ch)  # Insert at start to maintain order
+                remaining_width -= ch_width
+            else:
+                break
+                
+        result.insert(0, ("", "..."))  # Prepend the dots
+        
+        return result, max_width - remaining_width
+    else:
+        return formatted_text, width
 ```
 
 # Old README
