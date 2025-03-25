@@ -962,7 +962,7 @@ class Commands:
         if not callable(args):
             if type(args) is not str:
                 raise ValueError(repr(args))
-            return self.cmd_run(args, True)
+            return self.cmd_run(args, add_on_nonzero_exit=True, modify_assistant_and_placeholder=False)
 
         errors = args()
         if not errors:
@@ -971,7 +971,7 @@ class Commands:
         self.io.tool_output(errors)
         return errors
 
-    def cmd_run(self, args, add_on_nonzero_exit=False):
+    def cmd_run(self, args, add_on_nonzero_exit=False, modify_assistant_and_placeholder=False):
         "Run a shell command and optionally add the output to the chat (alias: !)"
         exit_status, combined_output = run_cmd(
             args, verbose=self.verbose, error_print=self.io.tool_error, cwd=self.coder.root
@@ -999,13 +999,21 @@ class Commands:
                 output=combined_output,
             )
 
-            self.coder.cur_messages += [
-                dict(role="user", content=msg),
-                dict(role="assistant", content="Ok."),
-            ]
+            if modify_assistant_and_placeholder:
+                self.coder.cur_messages += [
+                    dict(role="user", content=msg),
+                    dict(role="assistant", content="Ok."),
+                ]
 
-            if add and exit_status != 0:
-                self.io.placeholder = "What's wrong? Fix"
+                if add and exit_status != 0:
+                    self.io.placeholder = "What's wrong? Fix"
+            else:
+                self.coder.cur_messages += [
+                    dict(role="user", content=msg),
+                ]
+                if exit_status != 0:
+                    # return anything to try to fix the test
+                    return msg
 
     def cmd_exit(self, args):
         "Exit the application"
