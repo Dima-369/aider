@@ -1012,7 +1012,6 @@ class Commands:
                     dict(role="user", content=msg),
                 ]
                 if exit_status != 0:
-                    # return anything to try to fix the test
                     return msg
 
     def cmd_exit(self, args):
