@@ -13,8 +13,12 @@ class ProcessCoder(Coder):
             if command_request.description:
                 prompt += f"\nDescription: {command_request.description}"
             
+            original_yes = self.io.yes
+            self.io.yes = None
             if not self.io.confirm_ask(prompt, explicit_yes_required=True):
+                self.io.yes = original_yes
                 return -1, "Command execution cancelled by user"
+            self.io.yes = original_yes
 
         return run_cmd(
             command_request.command,

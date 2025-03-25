@@ -45,20 +45,11 @@ class EditBlockCoder(ProcessCoder):
                     
                     if self.verbose:
                         self.io.tool_output(f"Running command: {command_request.command}")
-                    
-                    # Execute command and get output
-                    exit_status, output = run_cmd(
-                        command_request.command, 
-                        verbose=self.verbose, 
-                        error_print=self.io.tool_error, 
-                        cwd=self.root
-                    )
 
-                    if output:
-                        num_lines = len(output.strip().splitlines())
-                        line_plural = "line" if num_lines == 1 else "lines"
-                        self.io.tool_output(f"Added {num_lines} {line_plural} of output to the chat.")
+                    # Execute command using ProcessCoder's execute_command
+                    exit_status, output = self.execute_command(command_request)
 
+                    if exit_status != -1 and output.strip() != "":
                         msg = prompts.run_output.format(
                             command=command_request.command,
                             output=output,
@@ -68,8 +59,6 @@ class EditBlockCoder(ProcessCoder):
                         self.cur_messages += [
                             dict(role="user", content=msg),
                         ]
-                        
-                        # Set reflected message to continue the conversation
                         self.reflected_message = msg
                             
                 except Exception as e:
