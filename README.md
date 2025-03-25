@@ -12,10 +12,11 @@ Execute via:
 venv/bin/python3 -m aider
 ```
 
-Patch `menus.py` from `venv/lib/python3.12/site-packages/prompt_toolkit/layout/menus.py`, so the file names are
-truncated at the start, and not at the end making them unreadable.
+Patch `menus.py` from `venv/lib/python3.12/site-packages/prompt_toolkit/layout/menus.py` (`prompt_toolkit-3.0.50`), so
+the file names are truncated at the start, and not at the end making them unreadable.
+It also makes sure that on long candidates, only 2 columns are shown which take up half the screen width.
 
-Paste in this function:
+Patch those 2 functions:
 
 ```python
 def _trim_formatted_text(
@@ -48,6 +49,132 @@ def _trim_formatted_text(
         return result, max_width - remaining_width
     else:
         return formatted_text, width
+
+    def create_content(self, width: int, height: int) -> UIContent:
+      """
+      Create a UIContent object for this menu.
+      """
+      complete_state = get_app().current_buffer.complete_state
+      if complete_state is None:
+        return UIContent()
+
+      column_width = self._get_column_width(complete_state)
+      self._render_pos_to_completion = {}
+
+      _T = TypeVar("_T")
+
+      def grouper(
+              n: int, iterable: Iterable[_T], fillvalue: _T | None = None
+      ) -> Iterable[Sequence[_T | None]]:
+        "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+        args = [iter(iterable)] * n
+        return zip_longest(fillvalue=fillvalue, *args)
+
+      def is_current_completion(completion: Completion) -> bool:
+        "Returns True when this completion is the currently selected one."
+        return (
+                complete_state is not None
+                and complete_state.complete_index is not None
+                and c == complete_state.current_completion
+        )
+
+      # Space required outside of the regular columns, for displaying the
+      # left and right arrow.
+      HORIZONTAL_MARGIN_REQUIRED = 3
+
+      # There should be at least one column, but it cannot be wider than
+      # the available width.
+      column_width = min(width - HORIZONTAL_MARGIN_REQUIRED, column_width)
+
+      # However, when the columns tend to be very wide, because there are
+      # some very wide entries, shrink it anyway.
+      if column_width > self.suggested_max_column_width:
+        # `column_width` can still be bigger that `suggested_max_column_width`,
+        # but if there is place for two columns, we divide by two.
+        column_width //= column_width // self.suggested_max_column_width
+
+      has_long_completion = any(
+        len(c.display_text) > 40 for c in complete_state.completions
+      )
+
+      # Calculate visible columns
+      visible_columns = max(1, (width - self._required_margin) // column_width)
+      if has_long_completion:
+        visible_columns = 2
+        # For long completions, make columns wider by using half of available width
+        column_width = (width - HORIZONTAL_MARGIN_REQUIRED) // 2
+
+      columns_ = list(grouper(height, complete_state.completions))
+      rows_ = list(zip(*columns_))
+
+      # Make sure the current completion is always visible: update scroll offset.
+      selected_column = (complete_state.complete_index or 0) // height
+      self.scroll = min(
+        selected_column, max(self.scroll, selected_column - visible_columns + 1)
+      )
+
+      render_left_arrow = self.scroll > 0
+      render_right_arrow = self.scroll < len(rows_[0]) - visible_columns
+
+      # Write completions to screen.
+      fragments_for_line = []
+
+      for row_index, row in enumerate(rows_):
+        fragments: StyleAndTextTuples = []
+        middle_row = row_index == len(rows_) // 2
+
+        # Draw left arrow if we have hidden completions on the left.
+        if render_left_arrow:
+          fragments.append(("class:scrollbar", "<" if middle_row else " "))
+        elif render_right_arrow:
+          # Reserve one column empty space. (If there is a right
+          # arrow right now, there can be a left arrow as well.)
+          fragments.append(("", " "))
+
+        # Draw row content.
+        for column_index, c in enumerate(row[self.scroll :][:visible_columns]):
+          if c is not None:
+            fragments += _get_menu_item_fragments(
+              c, is_current_completion(c), column_width, space_after=False
+            )
+
+            # Remember render position for mouse click handler.
+            for x in range(column_width):
+              self._render_pos_to_completion[
+                (column_index * column_width + x, row_index)
+              ] = c
+          else:
+            fragments.append(("class:completion", " " * column_width))
+
+        # Draw trailing padding for this row.
+        # (_get_menu_item_fragments only returns padding on the left.)
+        if render_left_arrow or render_right_arrow:
+          fragments.append(("class:completion", " "))
+
+        # Draw right arrow if we have hidden completions on the right.
+        if render_right_arrow:
+          fragments.append(("class:scrollbar", ">" if middle_row else " "))
+        elif render_left_arrow:
+          fragments.append(("class:completion", " "))
+
+        # Add line.
+        fragments_for_line.append(
+          to_formatted_text(fragments, style="class:completion-menu")
+        )
+
+      self._rendered_rows = height
+      self._rendered_columns = visible_columns
+      self._total_columns = len(columns_)
+      self._render_left_arrow = render_left_arrow
+      self._render_right_arrow = render_right_arrow
+      self._render_width = (
+              column_width * visible_columns + render_left_arrow + render_right_arrow + 1
+      )
+
+      def get_line(i: int) -> StyleAndTextTuples:
+        return fragments_for_line[i]
+
+      return UIContent(get_line=get_line, line_count=len(rows_))
 ```
 
 # Old README
