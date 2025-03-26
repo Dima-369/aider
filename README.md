@@ -6,6 +6,7 @@
 - bump `max_reflections` from 3 to 30 (for the shell commands and `auto-test`)
 - adjust that `auto-test: true` attempts to fix the errors automatically
 - add `/export` which copies all system, user and assistant messages as JSON to clipboard
+- modify `/reset` to not drop files which are in root `.aider.conf.yml`
 
 # My Setup
 

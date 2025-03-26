@@ -63,12 +63,14 @@ class Commands:
         verbose=False,
         editor=None,
         original_read_only_fnames=None,
+        config=None,  # Add config parameter
     ):
         self.io = io
         self.coder = coder
         self.parser = parser
         self.args = args
         self.verbose = verbose
+        self.config = config  # Store config
 
         self.verify_ssl = verify_ssl
         if voice_language == "auto":
@@ -392,33 +394,70 @@ class Commands:
 
         self._clear_chat_history()
 
-    def _drop_all_files(self):
-        self.coder.abs_fnames = set()
-
-        # When dropping all files, keep those that were originally provided via args.read
-        if self.original_read_only_fnames:
-            # Keep only the original read-only files
-            to_keep = set()
-            for abs_fname in self.coder.abs_read_only_fnames:
-                rel_fname = self.coder.get_rel_fname(abs_fname)
-                if (
-                    abs_fname in self.original_read_only_fnames
-                    or rel_fname in self.original_read_only_fnames
-                ):
-                    to_keep.add(abs_fname)
-            self.coder.abs_read_only_fnames = to_keep
-        else:
+    def _drop_all_files(self, drop_all=False):
+        self.io.tool_output("Debug: Starting _drop_all_files")
+        
+        # If drop_all is True, just clear everything and return
+        if drop_all:
+            self.coder.abs_fnames = set()
             self.coder.abs_read_only_fnames = set()
+            self.io.tool_output("Debug: Dropping all files")
+            return
+        
+        # Read .aider.conf.yml directly
+        config_files = set()
+        try:
+            import yaml
+            conf_path = Path(self.coder.root) / ".aider.conf.yml"
+            if conf_path.exists():
+                with open(conf_path) as f:
+                    config = yaml.safe_load(f)
+                    self.io.tool_output(f"Debug: Found config file: {conf_path}")
+                    self.io.tool_output(f"Debug: Config content: {config}")
+                    
+                    # Handle 'file' key in config
+                    if isinstance(config.get('file'), (str, list)):
+                        files = config['file'] if isinstance(config['file'], list) else [config['file']]
+                        config_files.update(files)
+                        self.io.tool_output(f"Debug: Found files in config: {files}")
+        except Exception as e:
+            self.io.tool_output(f"Debug: Error reading config: {e}")
+
+        # Keep track of files we want to preserve
+        editable_files = set()
+        readonly_files = set()
+        
+        # Add config files to editable files
+        for fname in config_files:
+            abs_fname = self.coder.abs_root_path(fname)
+            editable_files.add(abs_fname)
+            self.io.tool_output(f"Debug: Adding file as editable: {fname}")
+            
+        # Add original read-only files to readonly set
+        if self.original_read_only_fnames:
+            for fname in self.original_read_only_fnames:
+                abs_fname = self.coder.abs_root_path(fname)
+                readonly_files.add(abs_fname)
+
+        # Update the sets
+        self.coder.abs_fnames = editable_files
+        self.coder.abs_read_only_fnames = readonly_files
+
+        all_files = editable_files | readonly_files
+        if all_files:
+            self.io.tool_output(f"Debug: Keeping files: {[self.coder.get_rel_fname(f) for f in all_files]}")
+        else:
+            self.io.tool_output("Debug: No files to keep")
 
     def _clear_chat_history(self):
         self.coder.done_messages = []
         self.coder.cur_messages = []
 
     def cmd_reset(self, args):
-        "Drop all files and clear the chat history"
-        self._drop_all_files()
+        "Drop all files and clear the chat history, while preserving config-specified files"
+        self._drop_all_files(drop_all=False)
         self._clear_chat_history()
-        self.io.tool_output("All files dropped and chat history cleared.")
+        self.io.tool_output("All files dropped and chat history cleared (preserved config-specified files).")
 
     def cmd_tokens(self, args):
         "Report on the number of tokens used by the current chat context"
@@ -881,7 +920,7 @@ class Commands:
                 )
             else:
                 self.io.tool_output("Dropping all files from the chat session.")
-            self._drop_all_files()
+            self._drop_all_files(drop_all=True)
             return
 
         filenames = parse_quoted_filenames(args)
