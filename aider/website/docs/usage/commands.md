@@ -31,6 +31,7 @@ cog.out(get_help_md())
 | **/context** | Enter context mode to see surrounding code context. If no prompt provided, switches to context mode. |
 | **/copy** | Copy the last assistant message to the clipboard |
 | **/copy-context** | Copy the current chat context as markdown, suitable to paste into a web UI |
+| **/export** | Copy all messages (system, user, assistant) as JSON to clipboard |
 | **/diff** | Display the diff of changes since the last message |
 | **/drop** | Remove files from the chat session to free up context space |
 | **/edit** | Alias for /editor: Open an editor to write a prompt |

@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import json
 import subprocess
 import sys
 import tempfile
@@ -1585,6 +1586,37 @@ Just show me the edits I need to make.
         try:
             pyperclip.copy(markdown)
             self.io.tool_output("Copied code context to clipboard.")
+        except pyperclip.PyperclipException as e:
+            self.io.tool_error(f"Failed to copy to clipboard: {str(e)}")
+            self.io.tool_output(
+                "You may need to install xclip or xsel on Linux, or pbcopy on macOS."
+            )
+        except Exception as e:
+            self.io.tool_error(f"An unexpected error occurred while copying to clipboard: {str(e)}")
+
+    def cmd_export(self, args):
+        "Copy all messages (system, user, assistant) as JSON to clipboard"
+        
+        # Get system messages
+        main_sys = self.coder.fmt_system_prompt(self.coder.gpt_prompts.main_system)
+        main_sys += "\n" + self.coder.fmt_system_prompt(self.coder.gpt_prompts.system_reminder)
+        system_messages = [
+            {"role": "system", "content": main_sys},
+            {"role": "system", "content": self.coder.fmt_system_prompt(self.coder.gpt_prompts.system_reminder)}
+        ]
+        
+        # Get chat history
+        chat_messages = self.coder.done_messages + self.coder.cur_messages
+        
+        # Combine all messages
+        all_messages = system_messages + chat_messages
+        
+        # Convert to JSON
+        json_output = json.dumps(all_messages, indent=2)
+        
+        try:
+            pyperclip.copy(json_output)
+            self.io.tool_output("Copied complete message history as JSON to clipboard.")
         except pyperclip.PyperclipException as e:
             self.io.tool_error(f"Failed to copy to clipboard: {str(e)}")
             self.io.tool_output(
