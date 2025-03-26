@@ -1,3 +1,10 @@
+# Patches
+
+- provide patched functions for `prompt_toolkit` library for better completion candidate display
+- implement that the LLM can run shell commands itself, with optional user approval
+- bump `max_reflections` from 3 to 30 (for the shell commands and `auto-test`)
+- adjust that `auto-test: true` attempts to fix the errors automatically
+
 # My Setup
 
 ```bash
