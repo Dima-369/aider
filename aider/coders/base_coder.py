@@ -1217,7 +1217,9 @@ class Coder:
         ):
             if self.main_model.reminder == "sys":
                 chunks.reminder = reminder_message
-            elif self.main_model.reminder == "user" and final and final["role"] == "user":
+            elif self.main_model.reminder == "user" and final and final["role"] == "user" and \
+                    (not final["content"] == "User rejected command execution.") and \
+                    (not final["content"].startswith("I ran this command:\n\n")):
                 # stuff it into the user message
                 new_content = (
                     final["content"]
