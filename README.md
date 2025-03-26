@@ -16,10 +16,12 @@ brew install openblas
 venv/bin/python3 -m pip install -e .
 ```
 
-Execute via:
+Execute via this `fish` function to run with those local patches:
 
 ```bash
-venv/bin/python3 -m aider
+function aid
+    PYTHONPATH=~/Developer/aider ~/Developer/aider/venv/bin/python3 ~/Developer/aider/aider/__main__.py $argv
+end
 ```
 
 Patch `menus.py` from `venv/lib/python3.12/site-packages/prompt_toolkit/layout/menus.py` (`prompt_toolkit-3.0.50`), so
