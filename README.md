@@ -4,6 +4,7 @@
 - implement that the LLM can run shell commands itself, with optional user approval
 - bump `max_reflections` from 3 to 30 (for the shell commands and `auto-test`)
 - adjust that `auto-test: true` attempts to fix the errors automatically
+- add `/export` which copies all system, user and assistant messages as JSON to clipboard
 
 # My Setup
 
