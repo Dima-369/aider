@@ -1,4 +1,5 @@
 from typing import Optional, Tuple
+import re
 from ..run_cmd import run_cmd
 from .base_coder import Coder
 
@@ -20,11 +21,17 @@ class ProcessCoder(Coder):
                 return -1, "Command execution cancelled by user"
             self.io.yes = original_yes
 
-        return run_cmd(
+        exit_code, output = run_cmd(
             command_request.command,
             error_print=self.io.tool_error,
             cwd=self.root
         )
+
+        # Strip ANSI escape codes
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        output = ansi_escape.sub('', output)
+
+        return exit_code, output
 
     def handle_command_xml(self, xml_content: str) -> Optional[str]:
         """Process command XML and return command output if successful"""
