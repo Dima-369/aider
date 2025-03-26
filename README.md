@@ -1,6 +1,7 @@
 # Patches
 
-- provide patched functions for `prompt_toolkit` library for better completion candidate display
+- provide patched functions in `prompt_toolkit` library for better completion candidate display
+- provide patched functions in `httpx` library to hardcode http://localhost:9090 proxy
 - implement that the LLM can run shell commands itself, with optional user approval
 - bump `max_reflections` from 3 to 30 (for the shell commands and `auto-test`)
 - adjust that `auto-test: true` attempts to fix the errors automatically
@@ -24,7 +25,7 @@ Patch `menus.py` from `venv/lib/python3.12/site-packages/prompt_toolkit/layout/m
 the file names are truncated at the start, and not at the end making them unreadable.
 It also makes sure that on long candidates, only 2 columns are shown which take up half the screen width.
 
-Patch those 2 functions:
+## Patched functions in `venv/lib/python3.12/site-packages/prompt_toolkit/layout/menus.py`
 
 ```python
 def _trim_formatted_text(
@@ -183,6 +184,113 @@ def _trim_formatted_text(
         return fragments_for_line[i]
 
       return UIContent(get_line=get_line, line_count=len(rows_))
+```
+
+## Patched functions in `venv/lib/python3.12/site-packages/httpx/_transports/default.py`
+
+```python
+    def __init__(
+        self,
+        verify: ssl.SSLContext | str | bool = False,  # Disable SSL verification
+        cert: CertTypes | None = None,
+        trust_env: bool = False,  # Also disable trust_env to prevent env vars from overriding
+        http1: bool = True,
+        http2: bool = False,
+        limits: Limits = DEFAULT_LIMITS,
+        proxy: ProxyTypes | None = "http://localhost:9090",  # Hardcode proxy
+        uds: str | None = None,
+        local_address: str | None = None,
+        retries: int = 0,
+        socket_options: typing.Iterable[SOCKET_OPTION] | None = None,
+    ) -> None:
+        import httpcore
+
+        proxy = Proxy(url=proxy) if isinstance(proxy, (str, URL)) else proxy
+        ssl_context = create_ssl_context(verify=verify, cert=cert, trust_env=trust_env)
+
+        if proxy is None:
+            self._pool = httpcore.ConnectionPool(
+                ssl_context=ssl_context,
+                max_connections=limits.max_connections,
+                max_keepalive_connections=limits.max_keepalive_connections,
+                keepalive_expiry=limits.keepalive_expiry,
+                http1=http1,
+                http2=http2,
+                uds=uds,
+                local_address=local_address,
+                retries=retries,
+                socket_options=socket_options,
+            )
+        elif proxy.url.scheme in ("http", "https"):
+            self._pool = httpcore.HTTPProxy(
+                proxy_url=httpcore.URL(
+                    scheme=proxy.url.raw_scheme,
+                    host=proxy.url.raw_host,
+                    port=proxy.url.port,
+                    target=proxy.url.raw_path,
+                ),
+                proxy_auth=proxy.raw_auth,
+                proxy_headers=proxy.headers.raw,
+                ssl_context=ssl_context,
+                proxy_ssl_context=proxy.ssl_context,
+                max_connections=limits.max_connections,
+                max_keepalive_connections=limits.max_keepalive_connections,
+                keepalive_expiry=limits.keepalive_expiry,
+                http1=http1,
+                http2=http2,
+                socket_options=socket_options,
+            )
+        elif proxy.url.scheme in ("socks5", "socks5h"):
+            try:
+                import socksio  # noqa
+            except ImportError:  # pragma: no cover
+                raise ImportError(
+                    "Using SOCKS proxy, but the 'socksio' package is not installed. "
+                    "Make sure to install httpx using `pip install httpx[socks]`."
+                ) from None
+
+            self._pool = httpcore.SOCKSProxy(
+                proxy_url=httpcore.URL(
+                    scheme=proxy.url.raw_scheme,
+                    host=proxy.url.raw_host,
+                    port=proxy.url.port,
+                    target=proxy.url.raw_path,
+                ),
+                proxy_auth=proxy.raw_auth,
+                ssl_context=ssl_context,
+                max_connections=limits.max_connections,
+                max_keepalive_connections=limits.max_keepalive_connections,
+                keepalive_expiry=limits.keepalive_expiry,
+                http1=http1,
+                http2=http2,
+            )
+        else:  # pragma: no cover
+            raise ValueError(
+                "Proxy protocol must be either 'http', 'https', 'socks5', or 'socks5h',"
+                f" but got {proxy.url.scheme!r}."
+            )
+```
+
+## Patched functions in `venv/lib/python3.12/site-packages/httpx/_config.py`
+
+```python
+import ssl
+
+def create_ssl_context(
+        cert: CertTypes | None = None,
+        verify: ssl.SSLContext | str | bool = False,  # Set default to False
+        trust_env: bool = False,  # Set default to False
+) -> ssl.SSLContext:
+  if isinstance(verify, ssl.SSLContext):
+    return verify
+
+  # ssl.create_default_context() raises if cafile or capath is None
+  # so only pass them if they are not None
+  context = ssl.SSLContext(ssl.PROTOCOL_TLS)  # Use a bare SSL context
+  context.verify_mode = ssl.CERT_NONE  # Disable certificate verification
+  context.check_hostname = False  # Disable hostname verification
+
+  return context
 ```
 
 # Old README
