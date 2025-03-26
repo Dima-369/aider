@@ -49,16 +49,14 @@ class EditBlockCoder(ProcessCoder):
                     # Execute command using ProcessCoder's execute_command
                     exit_status, output = self.execute_command(command_request)
 
-                    if exit_status != -1 and output.strip() != "":
+                    if exit_status == -1 and output == "Command execution cancelled by user":
+                        msg = "User rejected command execution."
+                        self.reflected_message = msg
+                    else:
                         msg = prompts.run_output.format(
                             command=command_request.command,
                             output=output,
                         )
-
-                        # Only add the user message, don't add "Ok" response
-                        self.cur_messages += [
-                            dict(role="user", content=msg),
-                        ]
                         self.reflected_message = msg
                             
                 except Exception as e:
