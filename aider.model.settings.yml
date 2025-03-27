@@ -8,3 +8,14 @@
   cache_control: true
   editor_model_name: openai/claude-3.5-sonnet
   editor_edit_format: editor-diff
+
+- name: openai/command-a-03-2025
+  edit_format: diff
+  weak_model_name: openai/command-a-03-2025
+  use_repo_map: true
+  examples_as_sys_msg: true
+  extra_params:
+    max_tokens: 8096
+  cache_control: true
+  editor_model_name: openai/command-a-03-2025
+  editor_edit_format: editor-diff
