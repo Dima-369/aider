@@ -2,19 +2,15 @@ import difflib
 import math
 import re
 import sys
-from difflib import SequenceMatcher, get_close_matches
-import xml.etree.ElementTree as ET
+from difflib import SequenceMatcher
 from pathlib import Path
 
 from aider import utils
-from aider.run_cmd import run_cmd
-
-from ..dump import dump  # noqa: F401
-from .base_coder import Coder
 from .editblock_prompts import EditBlockPrompts
 from .process_coder import ProcessCoder
-from ..process_commands import parse_command_xml, CommandRequest
 from .. import prompts
+from ..dump import dump  # noqa: F401
+from ..process_commands import parse_command_xml
 
 
 class EditBlockCoder(ProcessCoder):
@@ -42,7 +38,7 @@ class EditBlockCoder(ProcessCoder):
                 try:
                     # Parse the command request first
                     command_request = parse_command_xml(edit[1])
-                    
+
                     if self.verbose:
                         self.io.tool_output(f"Running command: {command_request.command}")
 
@@ -53,12 +49,16 @@ class EditBlockCoder(ProcessCoder):
                         msg = "User rejected command execution."
                         self.reflected_message = msg
                     else:
+                        num_lines = len(output.strip().splitlines())
+                        line_plural = "line" if num_lines == 1 else "lines"
+                        self.io.tool_output(f"Added {num_lines} {line_plural} of output to the chat.")
+
                         msg = prompts.run_output.format(
                             command=command_request.command,
                             output=output,
                         )
                         self.reflected_message = msg
-                            
+
                 except Exception as e:
                     self.io.tool_error(f"Error processing command: {e}")
             else:
@@ -179,9 +179,9 @@ def perfect_replace(whole_lines, part_lines, replace_lines):
     part_len = len(part_lines)
 
     for i in range(len(whole_lines) - part_len + 1):
-        whole_tup = tuple(whole_lines[i : i + part_len])
+        whole_tup = tuple(whole_lines[i: i + part_len])
         if part_tup == whole_tup:
-            res = whole_lines[:i] + replace_lines + whole_lines[i + part_len :]
+            res = whole_lines[:i] + replace_lines + whole_lines[i + part_len:]
             return "".join(res)
 
 
@@ -291,14 +291,14 @@ def replace_part_with_missing_leading_whitespace(whole_lines, part_lines, replac
 
     for i in range(len(whole_lines) - num_part_lines + 1):
         add_leading = match_but_for_leading_whitespace(
-            whole_lines[i : i + num_part_lines], part_lines
+            whole_lines[i: i + num_part_lines], part_lines
         )
 
         if add_leading is None:
             continue
 
         replace_lines = [add_leading + rline if rline.strip() else rline for rline in replace_lines]
-        whole_lines = whole_lines[:i] + replace_lines + whole_lines[i + num_part_lines :]
+        whole_lines = whole_lines[:i] + replace_lines + whole_lines[i + num_part_lines:]
         return "".join(whole_lines)
 
     return None
@@ -337,7 +337,7 @@ def replace_closest_edit_distance(whole_lines, part, part_lines, replace_lines):
 
     for length in range(min_len, max_len):
         for i in range(len(whole_lines) - length + 1):
-            chunk = whole_lines[i : i + length]
+            chunk = whole_lines[i: i + length]
             chunk = "".join(chunk)
 
             similarity = SequenceMatcher(None, chunk, part).ratio()
@@ -351,9 +351,9 @@ def replace_closest_edit_distance(whole_lines, part, part_lines, replace_lines):
         return
 
     modified_whole = (
-        whole_lines[:most_similar_chunk_start]
-        + replace_lines
-        + whole_lines[most_similar_chunk_end:]
+            whole_lines[:most_similar_chunk_start]
+            + replace_lines
+            + whole_lines[most_similar_chunk_end:]
     )
     modified_whole = "".join(modified_whole)
 
@@ -425,7 +425,6 @@ UPDATED_ERR = ">>>>>>> REPLACE"
 separators = "|".join([HEAD, DIVIDER, UPDATED])
 
 split_re = re.compile(r"^((?:" + separators + r")[ ]*\n)", re.MULTILINE | re.DOTALL)
-
 
 missing_filename_err = (
     "Bad/missing filename. The filename must be alone on the line before the opening fence"
@@ -516,9 +515,9 @@ def find_original_update_blocks(content, fence=DEFAULT_FENCE, valid_fnames=None)
             try:
                 # if next line after HEAD exists and is DIVIDER, it's a new file
                 if i + 1 < len(lines) and divider_pattern.match(lines[i + 1].strip()):
-                    filename = find_filename(lines[max(0, i - 3) : i], fence, None)
+                    filename = find_filename(lines[max(0, i - 3): i], fence, None)
                 else:
-                    filename = find_filename(lines[max(0, i - 3) : i], fence, valid_fnames)
+                    filename = find_filename(lines[max(0, i - 3): i], fence, valid_fnames)
 
                 if not filename:
                     if current_filename:
@@ -540,15 +539,15 @@ def find_original_update_blocks(content, fence=DEFAULT_FENCE, valid_fnames=None)
                 updated_text = []
                 i += 1
                 while i < len(lines) and not (
-                    updated_pattern.match(lines[i].strip())
-                    or divider_pattern.match(lines[i].strip())
+                        updated_pattern.match(lines[i].strip())
+                        or divider_pattern.match(lines[i].strip())
                 ):
                     updated_text.append(lines[i])
                     i += 1
 
                 if i >= len(lines) or not (
-                    updated_pattern.match(lines[i].strip())
-                    or divider_pattern.match(lines[i].strip())
+                        updated_pattern.match(lines[i].strip())
+                        or divider_pattern.match(lines[i].strip())
                 ):
                     raise ValueError(f"Expected `{UPDATED_ERR}` or `{DIVIDER_ERR}`")
 
@@ -634,7 +633,7 @@ def find_similar_lines(search_lines, content_lines, threshold=0.6):
     best_match = None
 
     for i in range(len(content_lines) - len(search_lines) + 1):
-        chunk = content_lines[i : i + len(search_lines)]
+        chunk = content_lines[i: i + len(search_lines)]
         ratio = SequenceMatcher(None, search_lines, chunk).ratio()
         if ratio > best_ratio:
             best_ratio = ratio
