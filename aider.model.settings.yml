@@ -19,3 +19,10 @@
   cache_control: true
   editor_model_name: openai/command-a-03-2025
   editor_edit_format: editor-diff
+
+# copied from azure/gpt-4.1
+- name: openai/openai-large
+  edit_format: diff
+  use_repo_map: true
+  reminder: sys
+  examples_as_sys_msg: false
