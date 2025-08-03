@@ -9,6 +9,8 @@ pub fn get_language(language: &str) -> Result<Language> {
         "python" => Ok(tree_sitter_python::language()),
         "javascript" => Ok(tree_sitter_javascript::language()),
         "go" => Ok(tree_sitter_go::language()),
+        "swift" => Ok(tree_sitter_swift::language()),
+        "java" => Ok(tree_sitter_java::language()),
         _ => Err(anyhow!("Unsupported language: {}", language)),
     }
 }
@@ -16,10 +18,12 @@ pub fn get_language(language: &str) -> Result<Language> {
 /// Get the tree-sitter query for a given language
 pub fn get_query(language: &str) -> Result<&'static str> {
     match language {
-        "rust" => Ok(include_str!("queries/rust.scm")),
-        "python" => Ok(include_str!("queries/python.scm")),
-        "javascript" => Ok(include_str!("queries/javascript.scm")),
-        "go" => Ok(include_str!("queries/go.scm")),
+        "rust" => Ok(include_str!("queries/rust-tags.scm")),
+        "python" => Ok(include_str!("queries/python-tags.scm")),
+        "javascript" => Ok(include_str!("queries/javascript-tags.scm")),
+        "go" => Ok(include_str!("queries/go-tags.scm")),
+        "swift" => Ok(include_str!("queries/swift-tags.scm")),
+        "java" => Ok(include_str!("queries/java-tags.scm")),
         _ => Err(anyhow!("No query available for language: {}", language)),
     }
 }

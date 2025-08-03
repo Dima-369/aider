@@ -118,11 +118,31 @@ impl SymbolRanker {
     /// Check if a file is considered important (main files, lib files, etc.)
     fn is_important_file(&self, file_path: &Path) -> bool {
         if let Some(file_name) = file_path.file_name().and_then(|n| n.to_str()) {
-            matches!(file_name, 
-                "main.rs" | "lib.rs" | "mod.rs" | 
-                "main.py" | "__init__.py" |
-                "index.js" | "main.js" |
-                "main.go"
+            matches!(file_name,
+                // Rust
+                "main.rs" | "lib.rs" | "mod.rs" |
+                // Python
+                "main.py" | "__init__.py" | "setup.py" |
+                // JavaScript/TypeScript
+                "index.js" | "main.js" | "app.js" | "index.ts" | "main.ts" |
+                // Java
+                "Main.java" | "Application.java" | "App.java" |
+                // Kotlin
+                "Main.kt" | "Application.kt" | "App.kt" |
+                // Go
+                "main.go" |
+                // PHP
+                "index.php" | "main.php" | "app.php" |
+                // C/C++
+                "main.c" | "main.cpp" | "main.cc" |
+                // C#
+                "Program.cs" | "Main.cs" | "Application.cs" |
+                // Ruby
+                "main.rb" | "application.rb" | "app.rb" |
+                // Swift
+                "main.swift" | "AppDelegate.swift" |
+                // Scala
+                "Main.scala" | "Application.scala"
             )
         } else {
             false

@@ -1,6 +1,6 @@
 # Rust Repo Map CLI Tool - Progress Tracker
 
-## Current Status: Phase 3 - Core Functionality ✅
+## Current Status: Phase 4 - Multi-language Support ✅
 
 ## Completed Tasks
 
@@ -47,12 +47,16 @@
 - [x] Generate repo map output similar to Python version
 - [x] Test with both Rust and Python files
 
-### Phase 4: Multi-language Support
-- [ ] Add Python language support
-- [ ] Add JavaScript/TypeScript support
-- [ ] Add Go language support
-- [ ] Implement dynamic query file loading
-- [ ] Test with various programming languages
+### Phase 4: Multi-language Support ✅
+- [x] Add Python language support
+- [x] Add JavaScript/TypeScript support
+- [x] Add Go language support
+- [x] Add Swift language support
+- [x] Add Java language support
+- [x] Implement dynamic query file loading
+- [x] Test with various programming languages
+- [x] Copy all tree-sitter query files from aider
+- [x] Successfully support 6 major languages
 
 ### Phase 5: Advanced Features
 - [ ] Implement all refresh strategies

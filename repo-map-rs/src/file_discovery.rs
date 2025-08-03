@@ -11,23 +11,10 @@ const SUPPORTED_EXTENSIONS: &[&str] = &[
     "jsx",  // React JSX
     "tsx",  // React TSX
     "go",   // Go
-    "java", // Java
-    "c",    // C
-    "cpp",  // C++
-    "cc",   // C++
-    "cxx",  // C++
-    "h",    // C/C++ headers
-    "hpp",  // C++ headers
-    "cs",   // C#
-    "rb",   // Ruby
-    "php",  // PHP
     "swift", // Swift
-    "kt",   // Kotlin
-    "scala", // Scala
-    "clj",  // Clojure
-    "hs",   // Haskell
-    "ml",   // OCaml
-    "elm",  // Elm
+    "java", // Java
+    // Additional languages to be added later:
+    // "php", "kt", "scala", "c", "cpp", "cs", "rb", "lua"
 ];
 
 /// File discovery configuration
@@ -116,21 +103,10 @@ impl FileDiscovery {
                     "rs" => Some("rust"),
                     "py" => Some("python"),
                     "js" | "jsx" => Some("javascript"),
-                    "ts" | "tsx" => Some("typescript"),
+                    "ts" | "tsx" => Some("javascript"), // TypeScript uses JavaScript parser for now
                     "go" => Some("go"),
-                    "java" => Some("java"),
-                    "c" | "h" => Some("c"),
-                    "cpp" | "cc" | "cxx" | "hpp" => Some("cpp"),
-                    "cs" => Some("c_sharp"),
-                    "rb" => Some("ruby"),
-                    "php" => Some("php"),
                     "swift" => Some("swift"),
-                    "kt" => Some("kotlin"),
-                    "scala" => Some("scala"),
-                    "clj" => Some("clojure"),
-                    "hs" => Some("haskell"),
-                    "ml" => Some("ocaml"),
-                    "elm" => Some("elm"),
+                    "java" => Some("java"),
                     _ => None,
                 }
             } else {
