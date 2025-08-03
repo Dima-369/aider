@@ -13,8 +13,8 @@ const SUPPORTED_EXTENSIONS: &[&str] = &[
     "go",   // Go
     "swift", // Swift
     "java", // Java
-    // Additional languages to be added later:
-    // "php", "kt", "scala", "c", "cpp", "cs", "rb", "lua"
+    // Additional languages included:
+    "php", "kt", "scala", "c", "cpp", "cs", "rb", "lua"
 ];
 
 /// File discovery configuration
@@ -103,10 +103,19 @@ impl FileDiscovery {
                     "rs" => Some("rust"),
                     "py" => Some("python"),
                     "js" | "jsx" => Some("javascript"),
-                    "ts" | "tsx" => Some("javascript"), // TypeScript uses JavaScript parser for now
+                    "ts" => Some("typescript"),
+                    "tsx" => Some("tsx"),
                     "go" => Some("go"),
                     "swift" => Some("swift"),
                     "java" => Some("java"),
+                    "php" => Some("php"),
+                    "kt" => Some("kotlin"),
+                    "scala" => Some("scala"),
+                    "c" => Some("c"),
+                    "cpp" | "cc" | "cxx" | "hpp" | "hh" | "hxx" => Some("cpp"),
+                    "cs" => Some("csharp"),
+                    "rb" => Some("ruby"),
+                    "lua" => Some("lua"),
                     _ => None,
                 }
             } else {

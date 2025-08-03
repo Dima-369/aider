@@ -4,29 +4,33 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = { version = "4.4", features = ["derive"] }
-tree-sitter = "0.20"
-tree-sitter-rust = "0.20"
-tree-sitter-python = "0.20"
-tree-sitter-javascript = "0.20"
-tree-sitter-go = "0.20"
-tree-sitter-swift = "0.4"
-tree-sitter-java = "0.20"
-# Focus on the core languages that work with tree-sitter 0.20
-# Additional languages can be added later with compatible versions:
-# tree-sitter-php = "0.22"
-# tree-sitter-lua = "0.1"
-# tree-sitter-kotlin = "0.3"
-# tree-sitter-c = "0.21"
-# tree-sitter-cpp = "0.22"
-# tree-sitter-c-sharp = "0.21"
-# tree-sitter-ruby = "0.21"
-# tree-sitter-scala = "0.21"
-walkdir = "2.4"
+clap = { version = "4.5", features = ["derive"] }
+# Update to latest stable tree-sitter crates
+# Core
+tree-sitter = "0.24"
+# Popular languages (uncommented and aligned to 0.24-compatible versions)
+tree-sitter-rust = "0.24"
+tree-sitter-python = "0.23"
+tree-sitter-javascript = "0.23"
+tree-sitter-typescript = "0.23"
+tree-sitter-go = "0.23"
+tree-sitter-swift = "0.6"
+tree-sitter-java = "0.23"
+# Additional languages uncommented per request (latest available on crates.io)
+tree-sitter-php = "0.23"
+tree-sitter-lua = "0.2"
+tree-sitter-kotlin = "0.3"
+tree-sitter-c = "0.23"
+tree-sitter-cpp = "0.23"
+tree-sitter-c-sharp = "0.23"
+tree-sitter-ruby = "0.23"
+tree-sitter-scala = "0.23"
+
+walkdir = "2.5"
 ignore = "0.4"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 regex = "1.10"
 
 [dev-dependencies]
-tempfile = "3.8"
+tempfile = "3.10"
