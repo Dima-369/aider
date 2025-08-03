@@ -1,8 +1,22 @@
 use clap::Parser;
 use std::path::PathBuf;
 use anyhow::Result;
-use aider_repo_map::{FileDiscovery, parse_file, SymbolRanker, TreeRenderer, TokenCounter};
+use aider_repo_map::{FileDiscovery, parse_file, SymbolRanker, TreeRenderer, TokenCounter, normalize_display_path};
 use std::fs;
+
+
+#[cfg(test)]
+mod cli_tests {
+    use aider_repo_map::normalize_display_path;
+
+    #[test]
+    fn test_normalize_display_path_strips_dot_slash() {
+        assert_eq!(normalize_display_path("./src/main.rs"), "src/main.rs");
+        assert_eq!(normalize_display_path("src/main.rs"), "src/main.rs");
+        assert_eq!(normalize_display_path("./README.md"), "README.md");
+        assert_eq!(normalize_display_path("README.md"), "README.md");
+    }
+}
 
 #[derive(Parser)]
 #[command(name = "repo-map")]
@@ -42,7 +56,9 @@ fn main() -> Result<()> {
         eprintln!("  Size: {} tokens", args.size);
         eprintln!("  Refresh: {}", args.refresh);
         eprintln!("  Multiplier: {}", args.multiplier_no_files);
-        eprintln!("  Root: {}", args.root.display());
+        // Normalize root display by stripping leading ./ if present
+        let root_display = normalize_display_path(args.root.display().to_string());
+        eprintln!("  Root: {}", root_display);
         eprintln!("  Files: {:?}", args.files);
     }
 
@@ -56,9 +72,12 @@ fn main() -> Result<()> {
         eprintln!("Found {} source files:", files.len());
         for file in &files {
             if let Some(lang) = file_discovery.get_language(file) {
-                eprintln!("  {} ({})", file.display(), lang);
+                // Normalize display path by stripping leading ./ if present
+                let display_path = normalize_display_path(file.display().to_string());
+                eprintln!("  {} ({})", display_path, lang);
             } else {
-                eprintln!("  {} (unknown)", file.display());
+                let display_path = normalize_display_path(file.display().to_string());
+                eprintln!("  {} (unknown)", display_path);
             }
         }
     }
@@ -73,20 +92,23 @@ fn main() -> Result<()> {
                     match parse_file(file, language, &content) {
                         Ok(symbols) => {
                             if args.verbose {
-                                eprintln!("  Found {} symbols in {}", symbols.len(), file.display());
+                                let display_path = normalize_display_path(file.display().to_string());
+                                eprintln!("  Found {} symbols in {}", symbols.len(), display_path);
                             }
                             all_symbols.extend(symbols);
                         }
                         Err(e) => {
                             if args.verbose {
-                                eprintln!("  Failed to parse {}: {}", file.display(), e);
+                                let display_path = normalize_display_path(file.display().to_string());
+                                eprintln!("  Failed to parse {}: {}", display_path, e);
                             }
                         }
                     }
                 }
                 Err(e) => {
                     if args.verbose {
-                        eprintln!("  Failed to read {}: {}", file.display(), e);
+                        let display_path = normalize_display_path(file.display().to_string());
+                        eprintln!("  Failed to read {}: {}", display_path, e);
                     }
                 }
             }

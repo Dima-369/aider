@@ -57,8 +57,12 @@ impl TreeRenderer {
     fn render_file(&self, file_path: &Path, ranked_symbols: &[&RankedSymbol]) -> Result<String> {
         let mut output = String::new();
         
-        // File header
-        output.push_str(&format!("{}:\n", file_path.display()));
+        // File header: strip leading ./ from display if present
+        let mut display_path = file_path.display().to_string();
+        if let Some(stripped) = display_path.strip_prefix("./") {
+            display_path = stripped.to_string();
+        }
+        output.push_str(&format!("{}:\n", display_path));
 
         // Read file content for context
         let content = fs::read_to_string(file_path)?;
@@ -281,5 +285,30 @@ mod tests {
         let method_symbol = create_test_symbol("method", SymbolKind::Method, "test.py", 5);
         let span = renderer.find_symbol_span(&method_symbol, &lines, 4);
         assert_eq!(span, (4, 4)); // Just the method declaration line
+    }
+
+    #[test]
+    fn test_render_file_header_strips_dot_slash() -> Result<()> {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+
+        // Create a temporary file with content
+        let mut temp_file = NamedTempFile::new()?;
+        writeln!(temp_file, "fn foo() {{}}")?;
+
+        // Build a ranked symbol pointing to the temp file
+        let file_path = temp_file.path().to_path_buf();
+        let symbol = create_test_symbol("foo", SymbolKind::Function, &file_path.to_string_lossy(), 1);
+        let ranked_symbol = create_ranked_symbol(symbol, 1.0);
+
+        let renderer = TreeRenderer::new();
+        let output = renderer.render_tree(&[ranked_symbol], 1)?;
+
+        // Ensure header does not start with ./ even if present
+        let first_line = output.lines().next().unwrap_or("");
+        assert!(!first_line.starts_with("./"), "Header should not start with ./, got: {}", first_line);
+        assert!(first_line.ends_with(":"), "Header should end with colon, got: {}", first_line);
+
+        Ok(())
     }
 }
