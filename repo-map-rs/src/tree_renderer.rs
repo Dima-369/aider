@@ -9,15 +9,12 @@ use anyhow::Result;
 pub struct TreeRenderer {
     /// Maximum number of context lines to show around symbols
     context_lines: usize,
-    /// Whether to show line numbers
-    show_line_numbers: bool,
 }
 
 impl Default for TreeRenderer {
     fn default() -> Self {
         Self {
             context_lines: 2,
-            show_line_numbers: false,
         }
     }
 }
@@ -124,7 +121,7 @@ impl TreeRenderer {
     /// Find the span (start_line, end_line) of a symbol definition
     fn find_symbol_span(&self, symbol: &Symbol, lines: &[&str], symbol_line: usize) -> (usize, usize) {
         let start_line = symbol_line;
-        let mut end_line = symbol_line;
+        let end_line;
 
         // For different symbol kinds, try to find the end of the definition
         match symbol.kind {

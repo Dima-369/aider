@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::path::PathBuf;
 use anyhow::Result;
-use repo_map_rs::{FileDiscovery, parse_file, SymbolRanker, TreeRenderer, TokenCounter};
+use aider_repo_map::{FileDiscovery, parse_file, SymbolRanker, TreeRenderer, TokenCounter};
 use std::fs;
 
 #[derive(Parser)]
@@ -128,7 +128,7 @@ fn main() -> Result<()> {
 
 /// Use binary search to find the optimal number of symbols that fit within the token limit
 fn find_optimal_symbol_count(
-    ranked_symbols: &[repo_map_rs::RankedSymbol],
+    ranked_symbols: &[aider_repo_map::RankedSymbol],
     renderer: &TreeRenderer,
     max_tokens: usize
 ) -> Result<usize> {
