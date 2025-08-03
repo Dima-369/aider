@@ -1,5 +1,5 @@
 [package]
-name = "repo-map-rs"
+name = "aider-repo-map"
 version = "0.1.0"
 edition = "2024"
 
